@@ -1,0 +1,46 @@
+#!/bin/sh
+
+### BEGIN INIT INFO
+# Provides:          rcb-shutdown
+# Required-Start:    $remote_fs $all
+# Required-Stop:     $remote_fs
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: Starts and stops rcb-shutdown script
+# Description:       Starts and stops rcb-shutdown script
+### END INIT INFO
+
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+DAEMON=/home/pi/rasp_cluster_box/shutdown/shutdown-button.py
+NAME=rcb-shutdown
+DESC="rcb-shutdown script"
+USER=root
+
+. /lib/lsb/init-functions
+
+[ -x "$DAEMON" ] || exit 0
+
+case "$1" in
+  start)
+    echo -n "Starting $DESC: "
+    start-stop-daemon --chuid ${USER} --start --quiet --pidfile /var/run/$NAME.pid --background --make-pidfile --exec $DAEMON
+    echo "$NAME."
+    ;;
+  stop)
+    echo -n "Stopping $DESC: "
+    start-stop-daemon --chuid ${USER} --stop --oknodo --quiet --pidfile /var/run/$NAME.pid
+    echo "$NAME."
+    ;;
+  restart)
+    $0 stop
+    sleep 1
+    $0 start
+    ;;
+  *)
+    echo "Usage: $0 {start|stop|restart}" >&2
+    exit 1
+    ;;
+
+esac
+
+exit 0

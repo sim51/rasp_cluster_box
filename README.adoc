@@ -1,0 +1,127 @@
+= Raspebbry cluster box
+
+== Connectors
+
+| 3.3V
+| Black
+| Button 1
+|
+
+| #4
+| White
+| Button 1
+| Shutdown button
+
+| #17
+| Gray
+| Little red led
+| Server is up
+
+| #27
+| Purple
+| Big red led
+| Neo4j is alive
+
+| #22
+| Blue
+| Big yellow led
+| Neo4j is available
+
+| #24
+| Green
+| Big green led
+| Neo4j is master or blink on election
+
+| GND
+| Yellow
+| 
+
+| #25
+| Orange
+| little green led
+| blink on query
+
+== Installation
+
+=== Common
+
+[source,shell]
+----
+# Git
+sudo apt-get install git
+
+# Python 
+sudo apt-get install python-pip
+pip install RPi.GPIO
+pip install requests
+----
+
+=== Network 
+
+----
+vi /etc/dhcpcd.conf
+----
+
+Adding this at the end of the file
+
+----
+interface eth0
+static ip_address=192.168.1.102/24 <= change the static IP for each server
+static routers=192.168.1.254
+static domain_name_servers=
+----
+
+=== Neo4j server
+
+# Neo4j
+wget -O - https://debian.neo4j.org/neotechnology.gpg.key | sudo apt-key add -
+echo 'deb http://debian.neo4j.org/repo stable/' >/tmp/neo4j.list
+sudo mv /tmp/neo4j.list /etc/apt/sources.list.d
+sudo apt-get update
+sudo apt-get install neo4j-enterprise
+
+=== HA Proxy server
+
+echo deb http://httpredir.debian.org/debian jessie-backports main | tee /etc/apt/sources.list.d/backports.list
+curl http://haproxy.debian.net/bernat.debian.org.gpg |  apt-key add -
+echo deb http://haproxy.debian.net jessie-backports-1.6 main | tee /etc/apt/sources.list.d/haproxy.list
+apt-get update
+apt-get install haproxy -t jessie-backports-1.6
+
+=== Install the code
+
+make a SCP of the folder to ~
+
+----
+scp -r rasp_cluster_box/ pi@192.168.1.104:~
+----
+
+Add +x on all script
+
+----
+cd /home/pi/rasp_cluster_box/
+sudo chmod +x *.py
+cd /home/pi/rasp_cluster_box/neo4j-status/
+sudo chmod +x *
+cd /home/pi/rasp_cluster_box/queries/
+sudo chmod +x *
+cd /home/pi/rasp_cluster_box/shutdown/
+sudo chmod +x *
+----
+
+create symlink for all init script
+
+----
+cd /etc/init.d
+sudo ln -s /home/pi/rasp_cluster_box/neo4j-status/rcb-neo4j-status rcb-neo4j-status
+sudo ln -s /home/pi/rasp_cluster_box/shutdown/rcb-shutdown rcb-shutdown
+sudo ln -s /home/pi/rasp_cluster_box/queries/rcb-neo4j-queries rcb-neo4j-queries
+----
+
+Adding them into rc folders
+----
+cd /etc/init.d
+sudo update-rc.d rcb-neo4j-status defaults
+sudo update-rc.d rcb-shutdown defaults
+sudo update-rc.d rcb-neo4j-queries defaults
+----
